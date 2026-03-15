@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SYMA · Inspecciones</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Syne:wght@700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+:root{
+  --teal:#3d7a6e;--teal-d:#2c5c52;--teal-l:#eaf3f1;
+  --black:#111;--white:#fff;
+  --g50:#f7f8fa;--g100:#eef0f3;--g200:#dde1e7;--g400:#8f9aaa;--g600:#566070;--g900:#1a1e27;
+  --red:#e53e3e;--red-l:#fff5f5;--amber:#d69e2e;--amber-l:#fffbeb;--green:#38a169;--green-l:#f0fff4;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g900);min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--black);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:white}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px}
+.hdr-status{font-size:11px;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g400)}
+.dot.ok{background:var(--green)}
+.dot.spin{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TABS */
+.tabs{background:white;border-bottom:2px solid var(--g100);display:flex;position:sticky;top:53px;z-index:99}
+.tab{flex:1;padding:12px 4px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--g400);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab.on{color:var(--teal);border-bottom-color:var(--teal)}
+.tab-ico{font-size:18px}
+
+/* SCREENS */
+.sc{display:none;padding:14px;max-width:580px;margin:0 auto;padding-bottom:90px}
+.sc.on{display:block}
+
+/* CARDS */
+.card{background:white;border-radius:12px;border:1.5px solid var(--g200);margin-bottom:12px;overflow:hidden}
+.card-hdr{padding:11px 14px;background:var(--g50);border-bottom:1px solid var(--g100);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g600)}
+.card-body{padding:14px;display:flex;flex-direction:column;gap:11px}
+
+/* FORM */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.5px}
+.field select,.field input,.field textarea{background:var(--g50);border:1.5px solid var(--g200);border-radius:8px;padding:11px 13px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--g900);width:100%;-webkit-appearance:none}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238f9aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px}
+.field select:focus,.field input:focus{outline:none;border-color:var(--teal)}
+.field textarea{resize:none;height:70px;line-height:1.5}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* BUTTONS */
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 18px;border-radius:9px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--teal);color:white}
+.btn-secondary{background:var(--g100);color:var(--g600);border:1.5px solid var(--g200)}
+.btn-green{background:var(--green);color:white}
+.btn-full{width:100%}
+.btn-sm{padding:8px 13px;font-size:13px;border-radius:7px}
+
+/* ESTADO BUTTONS */
+.estados{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.est-btn{padding:12px 4px;border:2px solid var(--g200);border-radius:10px;background:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s}
+.est-btn .ico{font-size:22px}
+.est-btn.op{border-color:var(--green);background:var(--green-l);color:var(--green)}
+.est-btn.re{border-color:var(--red);background:var(--red-l);color:var(--red)}
+.est-btn.rc{border-color:var(--amber);background:var(--amber-l);color:var(--amber)}
+
+/* EXTINTOR CARD */
+.ext-card{background:white;border:1.5px solid var(--g200);border-radius:11px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.ext-card.insp{border-color:var(--green)}
+.ext-card.rech{border-color:var(--red)}
+.ext-card.recar{border-color:var(--amber)}
+.ext-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--g50)}
+.ext-head:active{background:var(--g100)}
+.ext-serie{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--teal-d)}
+.ext-tipo{font-size:14px;font-weight:700;margin:2px 0}
+.ext-loc{font-size:12px;color:var(--g400)}
+.ext-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.ext-badge.pend{background:var(--g100);color:var(--g400)}
+.ext-badge.ok{background:var(--green-l);color:var(--green)}
+.ext-badge.mal{background:var(--red-l);color:var(--red)}
+.ext-badge.rec{background:var(--amber-l);color:var(--amber)}
+.ext-body{display:none;padding:14px;border-top:1px solid var(--g100);flex-direction:column;gap:11px}
+.ext-body.open{display:flex}
+.chev{transition:transform .2s;font-size:13px;color:var(--g400);margin-left:6px;flex-shrink:0}
+.ext-card.open .chev{transform:rotate(180deg)}
+
+/* PROGRESO */
+.prog-bar{background:var(--g100);border-radius:20px;height:5px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:20px;transition:width .4s}
+.prog-txt{font-size:11px;color:var(--g400);text-align:right;margin-top:4px}
+
+/* BOTTOM BAR */
+.bottom{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--g200);padding:10px 14px;z-index:200;display:none}
+.bottom-inner{display:flex;gap:10px;max-width:580px;margin:0 auto}
+
+/* QR OVERLAY */
+.qr-ov{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+.qr-ov.open{display:flex}
+.qr-box{position:relative;width:260px;height:260px;border-radius:14px;overflow:hidden;border:3px solid var(--teal)}
+.qr-box video{width:100%;height:100%;object-fit:cover;display:block}
+.qr-line{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent);animation:scan 2s ease-in-out infinite}
+@keyframes scan{0%,100%{top:10%}50%{top:88%}}
+.qr-hint{color:rgba(255,255,255,.6);font-size:13px;text-align:center}
+.qr-status{color:rgba(255,255,255,.4);font-size:11px;text-align:center}
+.qr-manual{display:flex;gap:8px;width:100%;max-width:260px}
+.qr-manual input{flex:1;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:8px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;color:white}
+.qr-manual input::placeholder{color:rgba(255,255,255,.3)}
+.qr-manual input:focus{outline:none;border-color:var(--teal)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-box{background:white;border:1.5px solid var(--g200);border-radius:11px;padding:14px;text-align:center}
+.stat-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--teal)}
+.stat-l{font-size:11px;color:var(--g400);margin-top:2px}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.b-teal{background:var(--teal-l);color:var(--teal-d)}
+.b-gray{background:var(--g100);color:var(--g600)}
+.b-ok{background:var(--green-l);color:var(--green)}
+.b-warn{background:var(--amber-l);color:var(--amber)}
+.b-danger{background:var(--red-l);color:var(--red)}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--black);color:white;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:all .25s;pointer-events:none;border-left:3px solid var(--teal);white-space:nowrap;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{border-left-color:var(--red)}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--g400)}
+.empty-ico{font-size:44px;margin-bottom:10px}
+.empty h3{font-family:'Syne',sans-serif;font-size:17px;color:var(--g600);margin-bottom:5px}
+
+/* ETIQUETAS QR */
+.etq-prev{width:120px;height:130px;border:1px solid var(--g200);border-radius:8px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;background:white;text-align:center;flex-shrink:0}
+.etq-qr{width:70px;height:70px}
+
+/* RESUMEN OVERLAY */
+.res-ov{position:fixed;inset:0;background:var(--g50);z-index:500;overflow-y:auto;display:none}
+.res-inner{max-width:580px;margin:0 auto;padding:14px 14px 100px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <svg width="26" height="26" viewBox="0 0 50 50">
+      <polygon points="25,4 38,26 12,26" fill="#3d7a6e"/>
+      <polygon points="12,28 25,48 2,48" fill="#2d2d2d"/>
+      <polygon points="38,28 50,48 26,48" fill="#6b5b8a"/>
+    </svg>
+    <div>
+      <div class="hdr-title">syma</div>
+      <div class="hdr-sub">Inspecciones</div>
+    </div>
+  </div>
+  <div class="hdr-status">
+    <span class="dot" id="sDot"></span>
+    <span id="sTxt">Conectando...</span>
+  </div>
+</header>
+
+<!-- TABS -->
+<nav class="tabs">
+  <button class="tab on" data-sc="inicio" onclick="goTab(this)"><span class="tab-ico">🏠</span>Inicio</button>
+  <button class="tab" data-sc="insp" onclick="goTab(this)"><span class="tab-ico">🔍</span>Inspección</button>
+  <button class="tab" data-sc="qr" onclick="goTab(this)"><span class="tab-ico">🏷️</span>QR</button>
+  <button class="tab" data-sc="nuevo" onclick="goTab(this)"><span class="tab-ico">➕</span>Nuevo</button>
+  <button class="tab" data-sc="hist" onclick="goTab(this)"><span class="tab-ico">📋</span>Historial</button>
+  <button class="tab" data-sc="cfg" onclick="goTab(this)"><span class="tab-ico">⚙️</span>Config</button>
+</nav>
+
+<!-- INICIO -->
+<div class="sc on" id="sc-inicio">
+  <div style="padding:4px 0 14px">
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800">Buenos días 👋</div>
+    <div style="font-size:13px;color:var(--g400);margin-top:3px">¿Qué vas a hacer hoy?</div>
+  </div>
+
+  <div style="display:grid;gap:10px;margin-bottom:16px">
+    <button class="btn btn-primary btn-full" style="padding:16px;justify-content:flex-start;gap:14px;font-size:15px" onclick="goTabNombre('insp')">
+      <span style="font-size:24px">🏢</span>
+      <div style="text-align:left"><div>Inspeccionar empresa</div><div style="font-size:11px;font-weight:400;opacity:.8;margin-top:1px">Seleccioná el cliente y sus extintores</div></div>
+    </button>
+    <button class="btn btn-secondary btn-full" style="padding:16px;justify-content:flex-start;gap:14px;font-size:15px" onclick="abrirQR()">
+      <span style="font-size:24px">📷</span>
+      <div style="text-align:left"><div>Escanear QR</div><div style="font-size:11px;font-weight:400;opacity:.8;margin-top:1px">Escaneá el código del extintor</div></div>
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">Técnico</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Tu nombre</label>
+        <select id="tecSel" onchange="guardarTec()">
+          <option value="">— Seleccioná —</option>
+          <option value="Sergio Gaston Ponce">Sergio Gaston Ponce</option>
+          <option value="Angel Saborit">Angel Saborit</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-n" id="stCli">—</div><div class="stat-l">Clientes</div></div>
+    <div class="stat-box"><div class="stat-n" id="stExt">—</div><div class="stat-l">Extintores</div></div>
+  </div>
+  <div style="margin-top:10px;margin-bottom:10px">
+    <button class="btn btn-secondary btn-full btn-sm" onclick="cargarDatos(true)">🔄 Actualizar datos</button>
+  </div>
+
+  <!-- ALERTAS -->
+  <div id="alertasPanel"></div>
+</div>
+
+<!-- INSPECCIÓN -->
+<div class="sc" id="sc-insp">
+  <!-- paso 1: elegir empresa -->
+  <div id="p1">
+    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:12px">Elegí una empresa</div>
+    <div class="card">
+      <div class="card-body">
+        <div class="field">
+          <label>Empresa</label>
+          <select id="empSel" onchange="onEmpresaSel(this.value)">
+            <option value="">— Seleccioná —</option>
+          </select>
+        </div>
+        <div id="empInfo" style="font-size:13px;color:var(--g400);display:none"></div>
+        <button class="btn btn-primary btn-full" id="btnIniInsp" style="display:none" onclick="iniciarInspeccion()">
+          🔍 Ver extintores
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- paso 2: lista extintores -->
+  <div id="p2" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <button class="btn btn-secondary btn-sm" onclick="volverP1()">← Volver</button>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;line-height:1.2" id="p2Nombre"></div>
+        <div style="font-size:12px;color:var(--g400)" id="p2Dir"></div>
+      </div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="prog-txt" id="progTxt">0 inspeccionados</div>
+    <div style="height:8px"></div>
+    <div class="field" style="margin-bottom:10px">
+      <select id="filtroEst" onchange="renderExts()" style="background:white;border:1.5px solid var(--g200);border-radius:8px;padding:10px 13px;font-family:DM Sans,sans-serif;font-size:14px;color:var(--g900);width:100%">
+        <option value="">Todos los estados</option>
+        <option value="OPERATIVO">✅ Operativo</option>
+        <option value="EN_RECARGA_PRESTAMO">🔄 En recarga - Préstamo</option>
+        <option value="EN_RECARGA_RESERVA">📦 En recarga - Reserva</option>
+        <option value="A_VENCER">⚠️ A vencer este mes</option>
+        <option value="RECHAZADO">❌ Rechazado</option>
+        <option value="DESPRESURIZADO_PRESTAMO">💨 Despresurizado - Préstamo</option>
+        <option value="DESPRESURIZADO_RESERVA">💨 Despresurizado - Reserva</option>
+      </select>
+    </div>
+    <div id="extList"></div>
+  </div>
+</div>
+
+<!-- QR -->
+<div class="sc" id="sc-qr">
+  <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:12px">Generar etiquetas QR</div>
+  <div class="card">
+    <div class="card-body">
+      <div class="field">
+        <label>Empresa</label>
+        <select id="qrEmp" onchange="prevQR()">
+          <option value="">— Seleccioná —</option>
+        </select>
+      </div>
+      <div id="qrInfo" style="font-size:13px;color:var(--g400)"></div>
+      <button class="btn btn-primary btn-full" onclick="genPDFQR()">📄 Generar PDF etiquetas</button>
+    </div>
+  </div>
+  <div id="qrPrevCard" style="display:none">
+    <div class="card">
+      <div class="card-hdr">Vista previa (primeras 12)</div>
+      <div class="card-body">
+        <div id="qrPrevList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NUEVO EXTINTOR -->
+<div class="sc" id="sc-nuevo">
+  <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:12px">Nuevo extintor</div>
+  <div class="card">
+    <div class="card-hdr">Datos del extintor</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Empresa / Cliente</label>
+        <select id="nuEmp">
+          <option value="">— Seleccioná —</option>
+        </select>
+      </div>
+      <div class="fg2">
+        <div class="field">
+          <label>Tipo / Agente extintor</label>
+          <select id="nuTipo">
+            <option value="">— Seleccioná —</option>
+            <option>Polvo ABC</option>
+            <option>CO₂</option>
+            <option>Agua B/P</option>
+            <option>Halón</option>
+            <option>Polvo BC</option>
+            <option>AFFF Espuma</option>
+            <option>HCFC</option>
+            <option>AK</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Capacidad</label>
+          <select id="nuCap">
+            <option value="">— Seleccioná —</option>
+            <option>1 kg</option>
+            <option>2.5 kg</option>
+            <option>3.5 kg</option>
+            <option>5 kg</option>
+            <option>6 lts</option>
+            <option>10 kg</option>
+            <option>10 lt</option>
+            <option>25 kg</option>
+            <option>50 kg</option>
+            <option>70 kg</option>
+            <option>100 kg</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>N° de serie</label>
+        <input type="text" id="nuSerie" placeholder="Ej: 710757">
+      </div>
+      <div class="field">
+        <label>Ubicación / Sector</label>
+        <input type="text" id="nuUbic" placeholder="Ej: Planta baja - Sector A">
+      </div>
+      <div class="field">
+        <label>Puesto</label>
+        <input type="text" id="nuPuesto" placeholder="Ej: Recepción">
+      </div>
+      <div class="fg2">
+        <div class="field">
+          <label>Vencimiento carga</label>
+          <input type="month" id="nuVenc">
+        </div>
+        <div class="field">
+          <label>Venc. vida útil</label>
+          <input type="month" id="nuVidaUtil">
+        </div>
+        <div class="field">
+          <label>Venc. PH</label>
+          <input type="month" id="nuVencPH">
+        </div>
+        <div class="field">
+          <label>Estado inicial</label>
+          <select id="nuEstado">
+            <option value="OPERATIVO">Operativo</option>
+            <option value="EN_RECARGA_PRESTAMO">En recarga - Préstamo</option>
+            <option value="EN_RECARGA_RESERVA">En recarga - Reserva</option>
+            <option value="RECHAZADO">Rechazado</option>
+            <option value="DESPRESURIZADO_PRESTAMO">Despresurizado - Préstamo</option>
+            <option value="DESPRESURIZADO_RESERVA">Despresurizado - Reserva</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Observaciones</label>
+        <textarea id="nuObs" placeholder="Anotá cualquier detalle..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="guardarNuevoExt()">💾 Guardar extintor</button>
+      <div id="nuMsg" style="font-size:13px;color:var(--g400);text-align:center"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORIAL -->
+<div class="sc" id="sc-hist">
+  <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:12px">Historial</div>
+  <div id="histList"></div>
+</div>
+
+<!-- CONFIG -->
+<div class="sc" id="sc-cfg">
+  <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:14px">Configuración</div>
+  <div class="card">
+    <div class="card-body">
+      <div class="field">
+        <label>ID del Google Sheet</label>
+        <input type="text" id="cfgSheet" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUq...">
+      </div>
+      <div class="field">
+        <label>URL del Web App</label>
+        <input type="text" id="cfgWA" placeholder="https://script.google.com/macros/s/...">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="guardarCfg()">💾 Guardar y conectar</button>
+      <div id="cfgMsg" style="font-size:12px;color:var(--g400);text-align:center"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom" id="bottomBar">
+  <div class="bottom-inner">
+    <button class="btn btn-secondary" style="flex:1" onclick="verResumen()">Ver resumen</button>
+    <button class="btn btn-green" style="flex:2" onclick="finalizar()">Finalizar y guardar</button>
+  </div>
+</div>
+
+<!-- QR OVERLAY -->
+<div class="qr-ov" id="qrOv">
+  <div class="qr-box">
+    <video id="qrVid" autoplay playsinline muted></video>
+    <div class="qr-line"></div>
+  </div>
+  <div class="qr-hint">Apuntá al código QR del extintor</div>
+  <div class="qr-status" id="qrStat"></div>
+  <div class="qr-manual">
+    <input type="text" id="qrManual" placeholder="O ingresá N° de serie..." onkeydown="if(event.key==='Enter')qrManualOk()">
+    <button class="btn btn-primary btn-sm" onclick="qrManualOk()">OK</button>
+  </div>
+  <button class="btn btn-secondary" style="background:rgba(255,255,255,.1);color:white;border-color:rgba(255,255,255,.2)" onclick="cerrarQR()">✕ Cerrar</button>
+</div>
+
+<!-- RESUMEN OVERLAY -->
+<div class="res-ov" id="resOv">
+  <div class="res-inner">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button class="btn btn-secondary btn-sm" onclick="cerrarRes()">← Volver</button>
+      <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800">Resumen</div>
+    </div>
+    <div id="resContent"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+      <button class="btn" style="background:#25D366;color:white;font-weight:700" onclick="shareWA()">WhatsApp</button>
+      <button class="btn" style="background:#2563EB;color:white;font-weight:700" onclick="shareEmail()">Email</button>
+    </div>
+    <button class="btn btn-full" style="background:var(--black);color:white;font-weight:700;margin-top:10px" onclick="genPDF()">🖨️ Descargar PDF</button>
+  </div>
+</div>
+
+<!-- FICHA QR -->
+<div id="fichaOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:700;align-items:flex-end;justify-content:center">
+  <div style="background:white;border-radius:18px 18px 0 0;padding:20px 16px 40px;width:100%;max-width:580px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:Syne,sans-serif;font-size:17px;font-weight:800">Extintor encontrado</div>
+      <button onclick="cerrarFicha()" style="background:var(--g100);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div id="fichaContent"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-secondary" style="flex:1" onclick="cerrarFicha()">Cerrar</button>
+      <button class="btn btn-primary" style="flex:2" id="fichaInspBtn" onclick="">Inspeccionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════
+const SHEET_ID_DEF = '1ieV0V8ZnbN2xzC-Vfh0mBw5Ku6wM9mLvWFjDLZg6uDU';
+const WA_DEF = 'https://script.google.com/macros/s/AKfycbxSb3RCWcwLrQx31YyLWzjokuMg90Uy5Zspo-TrfKAAImjRPh5G-kCVsfolgoSkIFDR-w/exec';
+
+let CFG = { sheetId: SHEET_ID_DEF, waUrl: WA_DEF };
+let DB  = { clientes:[], extintores:[] };
+let INSP = { cliente:null, tecnico:'', fecha:'', items:{} };
+
+// ═══════════════════════════════════
+// TABS
+// ═══════════════════════════════════
+function goTab(btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.sc').forEach(s => s.classList.remove('on'));
+  document.getElementById('sc-' + btn.dataset.sc).classList.add('on');
+  document.getElementById('bottomBar').style.display = 'none';
+  const sc = btn.dataset.sc;
+  if (sc === 'hist') renderHist();
+  if (sc === 'cfg')  cargarCfgUI();
+  if (sc === 'insp' && INSP.cliente) document.getElementById('bottomBar').style.display = 'block';
+}
+function goTabNombre(nombre) {
+  document.querySelector('[data-sc="' + nombre + '"]').click();
+}
+
+// ═══════════════════════════════════
+// DATOS
+// ═══════════════════════════════════
+function csvUrl(hoja) {
+  return 'https://docs.google.com/spreadsheets/d/' + CFG.sheetId + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(hoja);
+}
+function parseCsv(txt) {
+  const rows = [];
+  for (const line of txt.split('\n')) {
+    if (!line.trim()) continue;
+    const row = []; let inside=false, cell='';
+    for (let i=0; i<line.length; i++) {
+      const c = line[i];
+      if (c==='"') { if (inside && line[i+1]==='"') { cell+='"'; i++; } else inside=!inside; }
+      else if (c===',' && !inside) { row.push(cell.trim()); cell=''; }
+      else cell+=c;
+    }
+    row.push(cell.trim()); rows.push(row);
+  }
+  return rows;
+}
+async function cargarDatos(forzar=false) {
+  setStatus('spin','Cargando...');
+  try {
+    const rC = await fetch(csvUrl('Clientes'));
+    if (!rC.ok) throw new Error('Error '+rC.status);
+    const dC = parseCsv(await rC.text());
+    const hC = dC[0];
+    DB.clientes = dC.slice(1).map(r => ({
+      nombre:    r[hC.indexOf('NOMBRE')]    || '',
+      direccion: r[hC.indexOf('DIRECCION')] || '',
+      localidad: r[hC.indexOf('LOCALIDAD')] || '',
+      telefono:  r[hC.indexOf('TELEFONO')]  || '',
+      email:     r[hC.indexOf('EMAIL')]     || '',
+    })).filter(c => c.nombre);
+
+    const rE = await fetch(csvUrl('Extintores'));
+    if (!rE.ok) throw new Error('Error '+rE.status);
+    const dE = parseCsv(await rE.text());
+    const hE = dE[0];
+    DB.extintores = dE.slice(1).map(r => ({
+      cliente:   r[hE.indexOf('CLIENTE')]   || '',
+      item:      r[hE.indexOf('ITEM')]      || '',
+      tipo:      r[hE.indexOf('TIPO')]      || '',
+      capacidad: r[hE.indexOf('CAPACIDAD')] || '',
+      serie:     limpiarSerie(r[hE.indexOf('N_SERIE')] || ''),
+      vencMes:   r[hE.indexOf('VENC_MES')]  || '',
+      vencAnio:  r[hE.indexOf('VENC_ANIO')] || '',
+      vidaUtil:  r[hE.indexOf('VIDA_UTIL')] || '',
+      vencPH:    r[hE.indexOf('VENC_PH')]   || '',
+      ubicacion: r[hE.indexOf('UBICACION')] || '',
+      puesto:    r[hE.indexOf('PUESTO')]    || '',
+      estado:    r[hE.indexOf('ESTADO')]    || '',
+    })).filter(e => e.tipo && e.tipo.length > 1);
+
+    setStatus('ok','Conectado');
+    document.getElementById('stCli').textContent = DB.clientes.length;
+    document.getElementById('stExt').textContent = DB.extintores.length;
+    poblarSelectores();
+    poblarSelectorNuevo();
+    renderAlertas();
+    sessionStorage.setItem('syma_db', JSON.stringify(DB));
+    toast(DB.clientes.length + ' clientes · ' + DB.extintores.length + ' extintores');
+  } catch(err) {
+    setStatus('','Error');
+    const cache = sessionStorage.getItem('syma_db');
+    if (cache) {
+      DB = JSON.parse(cache);
+      document.getElementById('stCli').textContent = DB.clientes.length;
+      document.getElementById('stExt').textContent = DB.extintores.length;
+      poblarSelectores();
+      toast('Datos del cache', true);
+    } else toast('Error: '+err.message, true);
+  }
+}
+function limpiarSerie(s) {
+  return (s+'').replace(/\.0$/,'').replace(/\.0\b/,'').trim();
+}
+
+// ═══════════════════════════════════
+// SELECTORES
+// ═══════════════════════════════════
+function poblarSelectores() {
+  const empresas = [...new Set(DB.extintores.map(e => e.cliente).filter(Boolean))].sort();
+  const opts = '<option value="">— Seleccioná —</option>' +
+    empresas.map(e => '<option value="' + e.replace(/"/g,'&quot;') + '">' + e + '</option>').join('');
+  document.getElementById('empSel').innerHTML = opts;
+  document.getElementById('qrEmp').innerHTML  = opts;
+}
+
+// ═══════════════════════════════════
+// TÉCNICO
+// ═══════════════════════════════════
+function guardarTec() {
+  INSP.tecnico = document.getElementById('tecSel').value;
+  localStorage.setItem('syma_tec', INSP.tecnico);
+  if (INSP.tecnico) toast('Hola, ' + INSP.tecnico.split(' ')[0] + '!');
+}
+
+// ═══════════════════════════════════
+// INSPECCIÓN
+// ═══════════════════════════════════
+function onEmpresaSel(nombre) {
+  const info = document.getElementById('empInfo');
+  const btn  = document.getElementById('btnIniInsp');
+  if (!nombre) { info.style.display='none'; btn.style.display='none'; return; }
+  const cant = DB.extintores.filter(e => e.cliente === nombre).length;
+  info.textContent = cant + ' extintores cargados';
+  info.style.display = 'block';
+  btn.style.display = 'block';
+}
+
+function iniciarInspeccion() {
+  const nombre = document.getElementById('empSel').value;
+  if (!nombre) return;
+  let cli = DB.clientes.find(c => c.nombre === nombre);
+  if (!cli) cli = { nombre:nombre, direccion:'', localidad:'', telefono:'', email:'' };
+  INSP.cliente = cli;
+  INSP.items   = {};
+  INSP.fecha   = new Date().toLocaleDateString('es-AR');
+  mostrarExtintores();
+}
+
+function mostrarExtintores() {
+  document.getElementById('p1').style.display = 'none';
+  document.getElementById('p2').style.display = 'block';
+  document.getElementById('bottomBar').style.display = 'block';
+  document.getElementById('p2Nombre').textContent = INSP.cliente.nombre;
+  document.getElementById('p2Dir').textContent = [INSP.cliente.direccion, INSP.cliente.localidad].filter(Boolean).join(', ');
+  renderExts();
+}
+
+function renderExts() {
+  const filtro = (document.getElementById('filtroEst')||{}).value || '';
+  const ahora  = new Date();
+  const hoyMes = ahora.getFullYear()*12 + ahora.getMonth()+1;
+
+  let exts = DB.extintores.filter(e => e.cliente === INSP.cliente.nombre);
+
+  // Aplicar filtro
+  if (filtro === 'A_VENCER') {
+    exts = exts.filter(e => {
+      const m=parseInt(e.vencMes)||0, a=parseInt(e.vencAnio)||0;
+      if (!m||!a) return false;
+      const vt=a*12+m;
+      return vt===hoyMes || vt===hoyMes+1;
+    });
+  } else if (filtro) {
+    exts = exts.filter(e => (e.estado||'').toUpperCase() === filtro);
+  }
+
+  const el = document.getElementById('extList');
+  if (!exts.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🧯</div><h3>Sin extintores</h3></div>';
+    return;
+  }
+  el.innerHTML = exts.map(e => {
+    const k    = e.serie || e.item;
+    const insp = INSP.items[k];
+    const bdgCls = !insp ? 'pend' : insp.estado==='RECHAZADO' ? 'mal' : insp.estado==='A_RECARGAR' ? 'rec' : 'ok';
+    const bdgTxt = !insp ? 'Pendiente' : insp.estado==='RECHAZADO' ? 'Rechazado' : insp.estado==='A_RECARGAR' ? 'A recargar' : 'OK';
+    const cardCls = !insp ? '' : insp.estado==='RECHAZADO' ? 'rech' : insp.estado==='A_RECARGAR' ? 'recar' : 'insp';
+    return '<div class="ext-card ' + cardCls + '" id="ec-' + k + '">' +
+      '<div class="ext-head" onclick="toggleExt(\'' + k + '\')">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="ext-serie">' + (e.serie || 'Sin serie') + '</div>' +
+          '<div class="ext-tipo">' + (e.tipo||'') + (e.capacidad?' · '+e.capacidad:'') + '</div>' +
+          '<div class="ext-loc">' + (e.ubicacion||e.puesto||'Sin ubicación') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' +
+          '<span class="ext-badge ' + bdgCls + '">' + bdgTxt + '</span>' +
+          '<span class="chev">▼</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ext-body" id="eb-' + k + '">' + formExt(e) + '</div>' +
+    '</div>';
+  }).join('');
+  actualizarProg(exts);
+}
+
+function formExt(e) {
+  const k    = e.serie || e.item;
+  const insp = INSP.items[k] || {};
+
+  // Datos actuales de la base
+  const venc = calcularVencimiento(e.vencMes, e.vencAnio);
+  const est  = estadoLabel(e.estado);
+
+  const datosActuales =
+    '<div style="background:var(--g50);border-radius:10px;padding:12px;margin-bottom:12px">' +
+      '<div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Datos actuales en la base</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+        datoBox('Serie', e.serie||'—') +
+        datoBox('Tipo', e.tipo||'—') +
+        datoBox('Capacidad', e.capacidad||'—') +
+        datoBox('Ubicación', e.ubicacion||e.puesto||'—') +
+        datoBox('Venc. carga', (e.vencMes&&e.vencAnio) ? e.vencMes+'/'+e.vencAnio : '—', venc.alert ? venc.color : '') +
+        datoBox('Vida útil', e.vidaUtil||'—') +
+        datoBox('Venc. PH', e.vencPH||'—') +
+        '<div style="grid-column:1/-1;background:' + est.bg + ';border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:700;color:' + est.color + '">' + est.txt + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="font-size:11px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Actualizar inspección</div>';
+
+  return datosActuales + '<div class="estados">' +
+    '<button class="est-btn ' + (insp.estado==='OPERATIVO'?'op':'') + '" onclick="setEst(\'' + k + '\',\'OPERATIVO\',this)"><span class="ico">✅</span>Operativo</button>' +
+    '<button class="est-btn ' + (insp.estado==='A_RECARGAR'?'rc':'') + '" onclick="setEst(\'' + k + '\',\'A_RECARGAR\',this)"><span class="ico">⚡</span>A recargar</button>' +
+    '<button class="est-btn ' + (insp.estado==='RECHAZADO'?'re':'') + '" onclick="setEst(\'' + k + '\',\'RECHAZADO\',this)"><span class="ico">❌</span>Rechazado</button>' +
+  '</div>' +
+  '<div class="fg2">' +
+    '<div class="field"><label>Nuevo vencimiento</label><input type="month" value="'+(insp.vencNuevo||'')+'" onchange="updI(\'' + k + '\',\'vencNuevo\',this.value)"></div>' +
+    '<div class="field"><label>Próx. inspección</label><input type="month" value="'+(insp.proxInsp||'')+'" onchange="updI(\'' + k + '\',\'proxInsp\',this.value)"></div>' +
+    '<div class="field"><label>Venc. vida útil</label><input type="month" value="'+(insp.vidaUtil||'')+'" onchange="updI(\'' + k + '\',\'vidaUtil\',this.value)"></div>' +
+    '<div class="field"><label>Venc. PH</label><input type="month" value="'+(insp.vencPH||'')+'" onchange="updI(\'' + k + '\',\'vencPH\',this.value)"></div>' +
+  '</div>' +
+  '<div class="field"><label>Ubicación</label><input type="text" placeholder="Ej: Planta baja - Sector A" value="'+(insp.ubicacion||e.ubicacion||e.puesto||'')+'" onchange="updI(\'' + k + '\',\'ubicacion\',this.value)"></div>' +
+  '<div class="field"><label>Observaciones</label><textarea placeholder="Anotá cualquier detalle..." onchange="updI(\'' + k + '\',\'obs\',this.value)">'+(insp.obs||'')+'</textarea></div>' +
+  '<div style="background:var(--amber-l);border:1.5px solid var(--amber);border-radius:9px;padding:11px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleAct(\'' + k + '\')">' +
+    '<div id="chk-' + k + '" style="width:20px;height:20px;border-radius:5px;border:2px solid var(--amber);background:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700"></div>' +
+    '<div><div style="font-size:13px;font-weight:700;color:var(--amber)">Actualizar datos en la base</div><div style="font-size:11px;color:var(--g600)">Tildá si cambiaron vencimientos o ubicación</div></div>' +
+  '</div>' +
+  '<button class="btn btn-primary btn-full" onclick="guardarExt(\'' + k + '\')">Guardar este extintor</button>';
+}
+
+function toggleExt(k) {
+  const card = document.getElementById('ec-' + k);
+  const body = document.getElementById('eb-' + k);
+  const isOpen = body.classList.contains('open');
+  document.querySelectorAll('.ext-body').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.ext-card').forEach(c => c.classList.remove('open'));
+  if (!isOpen) {
+    body.classList.add('open'); card.classList.add('open');
+    setTimeout(() => body.scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+  }
+}
+
+function setEst(k, est, btn) {
+  if (!INSP.items[k]) INSP.items[k] = {};
+  INSP.items[k].estado = est;
+  const form = btn.closest('.ext-body');
+  form.querySelectorAll('.est-btn').forEach(b => b.classList.remove('op','re','rc'));
+  btn.classList.add(est==='OPERATIVO'?'op':est==='RECHAZADO'?'re':'rc');
+}
+function updI(k, campo, val) {
+  if (!INSP.items[k]) INSP.items[k] = {};
+  INSP.items[k][campo] = val;
+}
+function toggleAct(k) {
+  if (!INSP.items[k]) INSP.items[k] = {};
+  const v = !INSP.items[k]._act;
+  INSP.items[k]._act = v;
+  const chk = document.getElementById('chk-' + k);
+  if (chk) { chk.textContent = v?'✓':''; chk.style.background = v?'var(--amber)':'white'; chk.style.color='white'; }
+}
+function guardarExt(k) {
+  if (!INSP.items[k] || !INSP.items[k].estado) { toast('Seleccioná el estado primero', true); return; }
+  const exts = DB.extintores.filter(e => e.cliente === INSP.cliente.nombre);
+  renderExts();
+  toast('Extintor guardado ✓');
+}
+function actualizarProg(exts) {
+  const total = exts.length;
+  const done  = exts.filter(e => INSP.items[e.serie||e.item]?.estado).length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progTxt').textContent  = done + ' de ' + total + ' inspeccionados (' + pct + '%)';
+}
+function volverP1() {
+  document.getElementById('p1').style.display = 'block';
+  document.getElementById('p2').style.display = 'none';
+  document.getElementById('bottomBar').style.display = 'none';
+  INSP.cliente = null;
+}
+
+// ═══════════════════════════════════
+// QR SCANNER
+// ═══════════════════════════════════
+let qrStream=null, qrTimer=null;
+
+function abrirQR() {
+  document.getElementById('qrOv').classList.add('open');
+  document.getElementById('qrManual').value = '';
+  document.getElementById('qrStat').textContent = '';
+  iniciarCam();
+}
+function cerrarQR() {
+  document.getElementById('qrOv').classList.remove('open');
+  detenerCam();
+}
+async function iniciarCam() {
+  try {
+    qrStream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'environment', width:{ideal:1280}, height:{ideal:720} }
+    });
+    const v = document.getElementById('qrVid');
+    v.srcObject = qrStream;
+    await v.play();
+    document.getElementById('qrStat').textContent = 'Cámara activa';
+
+    // Intentar BarcodeDetector API nativa (Chrome Android)
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      qrTimer = setInterval(async () => {
+        try {
+          const codes = await detector.detect(v);
+          if (codes.length > 0) {
+            document.getElementById('qrStat').textContent = 'QR: ' + codes[0].rawValue;
+            procesarQR(codes[0].rawValue);
+          }
+        } catch(e) {}
+      }, 400);
+    } else {
+      // Fallback jsQR
+      qrTimer = setInterval(() => {
+        if (v.readyState !== v.HAVE_ENOUGH_DATA) return;
+        const c = document.createElement('canvas');
+        c.width=v.videoWidth; c.height=v.videoHeight;
+        c.getContext('2d').drawImage(v,0,0);
+        const img = c.getContext('2d').getImageData(0,0,c.width,c.height);
+        const code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
+        if (code) { document.getElementById('qrStat').textContent = 'QR: ' + code.data; procesarQR(code.data); }
+      }, 300);
+    }
+  } catch(e) { toast('Sin acceso a la cámara: ' + e.message, true); }
+}
+function detenerCam() {
+  if (qrTimer) { clearInterval(qrTimer); qrTimer=null; }
+  if (qrStream) { qrStream.getTracks().forEach(t=>t.stop()); qrStream=null; }
+  const v = document.getElementById('qrVid');
+  if (v) v.srcObject = null;
+}
+function qrManualOk() {
+  const v = document.getElementById('qrManual').value.trim();
+  if (v) procesarQR(v);
+}
+function procesarQR(raw) {
+  // Limpiar la serie — solo números/texto, sin URLs
+  let serie = raw.trim().replace(/\.0$/,'');
+  // Si es URL, extraer el parámetro serie o el último segmento
+  try {
+    const u = new URL(raw);
+    serie = u.searchParams.get('serie') || u.searchParams.get('id') || u.pathname.split('/').pop() || raw;
+  } catch(e) {}
+  serie = serie.trim().replace(/\.0$/,'');
+
+  detenerCam(); cerrarQR();
+
+  // Buscar en la base con comparación flexible
+  const ext = DB.extintores.find(e => {
+    const s = limpiarSerie(e.serie);
+    return s === serie || s === serie.replace(/^0+/,'') || serie === s.replace(/^0+/,'');
+  });
+
+  if (ext) {
+    mostrarFichaQR(ext);
+  } else {
+    toast('Serie "' + serie + '" no encontrada en la base', true);
+  }
+}
+
+// ═══════════════════════════════════
+// FINALIZAR
+// ═══════════════════════════════════
+async function finalizar() {
+  const exts = DB.extintores.filter(e => e.cliente === INSP.cliente?.nombre);
+  const insp = exts.filter(e => INSP.items[e.serie||e.item]?.estado);
+  if (!insp.length) { toast('Inspeccioná al menos un extintor', true); return; }
+  if (!INSP.tecnico) { toast('Seleccioná tu nombre en Inicio', true); return; }
+
+  toast('Guardando...');
+  let ok=0, err=0;
+  for (const ext of insp) {
+    const k = ext.serie||ext.item;
+    const i = INSP.items[k];
+    try {
+      await enviar({ fecha:INSP.fecha, cliente:INSP.cliente.nombre, tecnico:INSP.tecnico,
+        serie:ext.serie||'', tipo:ext.tipo||'', estado:i.estado||'',
+        vencNuevo:i.vencNuevo||'', proxInsp:i.proxInsp||'',
+        vidaUtil:i.vidaUtil||'', vencPH:i.vencPH||'', obs:i.obs||'' });
+      if (i._act && ext.serie) {
+        await enviar({ accion:'actualizar', serie:ext.serie, estado:i.estado||'',
+          vencNuevo:i.vencNuevo||'', vidaUtil:i.vidaUtil||'',
+          vencPH:i.vencPH||'', ubicacion:i.ubicacion||'' });
+      }
+      ok++;
+    } catch(e) { err++; }
+  }
+  // Guardar historial local
+  const reg = { id:Date.now(), fecha:INSP.fecha, cliente:INSP.cliente.nombre,
+    tecnico:INSP.tecnico, total:exts.length, insp:insp.length, items:{...INSP.items} };
+  const hist = JSON.parse(localStorage.getItem('syma_hist')||'[]');
+  hist.unshift(reg);
+  localStorage.setItem('syma_hist', JSON.stringify(hist.slice(0,50)));
+
+  toast(ok + ' guardados en Sheets' + (err?' · '+err+' errores':''));
+  verResumen();
+}
+async function enviar(datos) {
+  if (!CFG.waUrl) return;
+  const r = await fetch(CFG.waUrl, { method:'POST', body:JSON.stringify(datos) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error||'Error');
+}
+
+// ═══════════════════════════════════
+// RESUMEN
+// ═══════════════════════════════════
+function verResumen() {
+  const exts = DB.extintores.filter(e => e.cliente === INSP.cliente?.nombre);
+  const insp = exts.filter(e => INSP.items[e.serie||e.item]?.estado);
+  const op   = insp.filter(e => INSP.items[e.serie||e.item].estado==='OPERATIVO').length;
+  const re   = insp.filter(e => INSP.items[e.serie||e.item].estado==='RECHAZADO').length;
+  const rc   = insp.filter(e => INSP.items[e.serie||e.item].estado==='A_RECARGAR').length;
+
+  document.getElementById('resContent').innerHTML =
+    '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">' + INSP.cliente?.nombre + '</div>' +
+    '<div style="font-size:12px;color:var(--g400);margin-bottom:14px">' + INSP.fecha + ' · ' + (INSP.tecnico||'Sin técnico') + '</div>' +
+    '<div style="display:grid;gap:8px;margin-bottom:14px">' +
+      stat(insp.length, 'Inspeccionados', 'de ' + exts.length + ' totales', 'var(--teal)') +
+      stat(op, 'Operativos', '', 'var(--green)') +
+      (re ? stat(re, 'Rechazados', '', 'var(--red)') : '') +
+      (rc ? stat(rc, 'A recargar', '', 'var(--amber)') : '') +
+    '</div>' +
+    '<div class="card"><div class="card-body" style="gap:0">' +
+    insp.map(e => {
+      const k=e.serie||e.item, i=INSP.items[k];
+      const col=i.estado==='RECHAZADO'?'var(--red)':i.estado==='A_RECARGAR'?'var(--amber)':'var(--green)';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--g100)">' +
+        '<div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--teal-d)">' + (e.serie||'—') + '</div>' +
+          '<div style="font-size:13px;font-weight:600">' + (e.tipo||'') + ' ' + (e.capacidad||'') + '</div>' +
+          (i.obs?'<div style="font-size:11px;color:var(--g400)">' + i.obs + '</div>':'') +
+        '</div>' +
+        '<span style="font-size:12px;font-weight:700;color:'+col+'">' + i.estado.replace('_',' ') + '</span>' +
+      '</div>';
+    }).join('') +
+    '</div></div>';
+
+  document.getElementById('resOv').style.display = 'block';
+}
+function stat(n, label, sub, color) {
+  return '<div style="background:white;border:1.5px solid var(--g200);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px">' +
+    '<div style="font-family:Syne,sans-serif;font-size:26px;font-weight:800;color:'+color+';min-width:36px">' + n + '</div>' +
+    '<div><div style="font-weight:700">' + label + '</div>' + (sub?'<div style="font-size:12px;color:var(--g400)">' + sub + '</div>':'') + '</div>' +
+  '</div>';
+}
+function cerrarRes() { document.getElementById('resOv').style.display='none'; }
+
+function buildTxt() {
+  const exts = DB.extintores.filter(e => e.cliente===INSP.cliente?.nombre);
+  const insp = exts.filter(e => INSP.items[e.serie||e.item]?.estado);
+  let t = 'INSPECCION SYMA EXTINTORES\n' + INSP.fecha + ' | ' + (INSP.tecnico||'') + '\nCliente: ' + INSP.cliente?.nombre + '\n\n';
+  insp.forEach(e => {
+    const k=e.serie||e.item, i=INSP.items[k];
+    t += (e.serie||'—') + ' — ' + (e.tipo||'') + ' ' + (e.capacidad||'') + ' — ' + i.estado;
+    if (i.obs) t += ' — ' + i.obs;
+    t += '\n';
+  });
+  return t;
+}
+function shareWA() {
+  window.open('https://wa.me/?text='+encodeURIComponent(buildTxt()),'_blank');
+}
+function shareEmail() {
+  const sub = 'Inspeccion ' + (INSP.cliente?.nombre||'');
+  window.open('mailto:?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(buildTxt()),'_blank');
+}
+function genPDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=210, M=14, cW=W-M*2;
+    let y=M;
+    doc.setFillColor(0,0,0); doc.rect(0,0,W,14,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text('syma', M, 10);
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text('INSPECCION DE EXTINTORES', M+22, 8);
+    doc.text(INSP.fecha, W-M, 10, {align:'right'});
+    y=20;
+    doc.setTextColor(0,0,0); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text(INSP.cliente?.nombre||'', M, y); y+=6;
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,100);
+    doc.text('Tecnico: '+(INSP.tecnico||'—'), M, y); y+=8;
+
+    const exts = DB.extintores.filter(e=>e.cliente===INSP.cliente?.nombre);
+    const insp = exts.filter(e=>INSP.items[e.serie||e.item]?.estado);
+
+    doc.setFillColor(0,0,0); doc.rect(M,y,cW,6,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+    doc.text('SERIE',M+2,y+4); doc.text('TIPO',M+32,y+4); doc.text('CAPACIDAD',M+72,y+4);
+    doc.text('ESTADO',M+100,y+4); doc.text('VENC.',M+128,y+4); doc.text('OBS',M+148,y+4);
+    y+=6;
+
+    insp.forEach((e,i) => {
+      if (y>270) { doc.addPage(); y=14; }
+      const k=e.serie||e.item, ii=INSP.items[k];
+      doc.setFillColor(i%2===0?255:248,i%2===0?255:248,i%2===0?255:249);
+      doc.rect(M,y,cW,7,'F');
+      doc.setTextColor(0,0,0); doc.setFontSize(7); doc.setFont('helvetica','normal');
+      doc.text(e.serie||'—',M+2,y+4.8);
+      doc.text(e.tipo||'—',M+32,y+4.8,{maxWidth:36});
+      doc.text(e.capacidad||'—',M+72,y+4.8);
+      const col=ii.estado==='RECHAZADO'?[229,62,62]:ii.estado==='A_RECARGAR'?[214,158,46]:[56,161,105];
+      doc.setFont('helvetica','bold'); doc.setTextColor(...col);
+      doc.text(ii.estado.replace('_',' '),M+100,y+4.8);
+      doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0);
+      doc.text(ii.vencNuevo||'—',M+128,y+4.8);
+      doc.text(ii.obs||'—',M+148,y+4.8,{maxWidth:44});
+      y+=7;
+    });
+    doc.save('Syma_Insp_'+(INSP.cliente?.nombre||'').replace(/\s+/g,'_')+'.pdf');
+    toast('PDF descargado');
+  } catch(e) { toast('Error PDF: '+e.message,true); }
+}
+
+// ═══════════════════════════════════
+// GENERAR QR
+// ═══════════════════════════════════
+function prevQR() {
+  const emp  = document.getElementById('qrEmp').value;
+  const info = document.getElementById('qrInfo');
+  const card = document.getElementById('qrPrevCard');
+  if (!emp) { info.textContent=''; card.style.display='none'; return; }
+  const exts = DB.extintores.filter(e => e.cliente===emp && e.serie);
+  info.textContent = exts.length + ' extintores con N° de serie';
+  if (!exts.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  const cont = document.getElementById('qrPrevList');
+  cont.innerHTML = '';
+  exts.slice(0,12).forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'etq-prev';
+    div.innerHTML = '<div style="font-family:Syne,sans-serif;font-size:8px;font-weight:800;color:#3d7a6e">syma</div>' +
+      '<div class="etq-qr" id="pv-'+e.serie+'"></div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:7px;font-weight:700;color:#2c5c52">' + e.serie + '</div>' +
+      '<div style="font-size:6.5px;font-weight:600;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + emp + '</div>' +
+      '<div style="font-size:6px;color:#566070">' + (e.tipo||'') + (e.capacidad?' '+e.capacidad:'') + '</div>';
+    cont.appendChild(div);
+    setTimeout(() => {
+      const el = document.getElementById('pv-'+e.serie);
+      if (el && window.QRCode) new QRCode(el, { text:limpiarSerie(e.serie), width:68, height:68, correctLevel:QRCode.CorrectLevel.M });
+    }, 80);
+  });
+  if (exts.length>12) {
+    const m=document.createElement('div');
+    m.style='font-size:12px;color:var(--g400);padding:10px;align-self:center';
+    m.textContent='+ '+(exts.length-12)+' más en el PDF';
+    cont.appendChild(m);
+  }
+}
+
+function qrImg(serie) {
+  return new Promise(resolve => {
+    const div = document.createElement('div');
+    div.style='position:absolute;left:-9999px;top:-9999px;width:200px;height:200px';
+    document.body.appendChild(div);
+    try {
+      new QRCode(div, { text:limpiarSerie(serie), width:200, height:200, correctLevel:QRCode.CorrectLevel.M });
+      setTimeout(() => {
+        const cvs=div.querySelector('canvas'), img=div.querySelector('img');
+        let src=null;
+        if (cvs) { try { src=cvs.toDataURL('image/png'); } catch(e){} }
+        if (!src && img && img.src.startsWith('data:')) src=img.src;
+        document.body.removeChild(div);
+        resolve(src);
+      }, 300);
+    } catch(e) { try{document.body.removeChild(div);}catch(e2){} resolve(null); }
+  });
+}
+
+async function genPDFQR() {
+  const emp = document.getElementById('qrEmp').value;
+  if (!emp) { toast('Seleccioná una empresa', true); return; }
+  const exts = DB.extintores.filter(e => e.cliente===emp && e.serie);
+  if (!exts.length) { toast('No hay extintores con N° de serie', true); return; }
+
+  toast('Generando ' + exts.length + ' etiquetas...');
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const W=50, H=50;
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:[W,H]});
+
+    for (let i=0; i<exts.length; i++) {
+      if (i>0) doc.addPage([W,H]);
+      const e=exts[i];
+      if (i%5===0) toast('Generando... '+i+' de '+exts.length);
+
+      const src = await qrImg(e.serie);
+
+      // Fondo blanco
+      doc.setFillColor(255,255,255); doc.rect(0,0,W,H,'F');
+
+      // Header negro
+      doc.setFillColor(0,0,0); doc.rect(0,0,W,7,'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+      doc.text('SYMA EXTINTORES', W/2, 5, {align:'center'});
+
+      // QR
+      if (src) doc.addImage(src,'PNG',W/2-15.5,7.5,31,31);
+
+      // Línea
+      doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
+      doc.line(3,39.5,W-3,39.5);
+
+      // Serie grande
+      doc.setTextColor(0,0,0); doc.setFontSize(11); doc.setFont('helvetica','bold');
+      doc.text('N° '+(limpiarSerie(e.serie)), W/2, 43.5, {align:'center',maxWidth:W-4});
+
+      // Empresa
+      doc.setFontSize(6); doc.setFont('helvetica','normal');
+      doc.text(emp, W/2, 47, {align:'center',maxWidth:W-4});
+
+      // Tipo
+      doc.setFontSize(5.5); doc.setTextColor(100,100,100);
+      const tc=[(e.tipo||''),(e.capacidad||'')].filter(Boolean).join(' · ');
+      doc.text(tc, W/2, 49.5, {align:'center',maxWidth:W-4});
+    }
+
+    doc.save('Syma_QR_'+emp.replace(/\s+/g,'_')+'.pdf');
+    toast('PDF listo — '+exts.length+' etiquetas 50x50mm');
+  } catch(e) { toast('Error: '+e.message,true); }
+}
+
+// ═══════════════════════════════════
+// HISTORIAL
+// ═══════════════════════════════════
+function renderHist() {
+  const hist = JSON.parse(localStorage.getItem('syma_hist')||'[]');
+  const el   = document.getElementById('histList');
+  if (!hist.length) {
+    el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><h3>Sin historial</h3><p>Las inspecciones aparecen acá</p></div>';
+    return;
+  }
+  el.innerHTML = hist.map(h =>
+    '<div class="card" style="margin-bottom:10px"><div class="card-body" style="gap:6px">' +
+    '<div style="display:flex;justify-content:space-between"><div style="font-weight:700;font-size:14px">'+h.cliente+'</div><div style="font-size:11px;color:var(--g400)">'+h.fecha+'</div></div>' +
+    '<div style="font-size:12px;color:var(--g400)">'+h.tecnico+'</div>' +
+    '<div style="display:flex;gap:8px;margin-top:4px"><span class="badge b-teal">'+h.insp+' inspeccionados</span><span class="badge b-gray">'+h.total+' totales</span></div>' +
+    '</div></div>'
+  ).join('');
+}
+
+// ═══════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════
+function guardarCfg() {
+  const id  = document.getElementById('cfgSheet').value.trim();
+  const url = document.getElementById('cfgWA').value.trim();
+  if (id)  CFG.sheetId = id;
+  if (url) CFG.waUrl   = url;
+  localStorage.setItem('syma_cfg', JSON.stringify(CFG));
+  document.getElementById('cfgMsg').textContent = 'Guardado. Reconectando...';
+  cargarDatos(true);
+}
+function cargarCfgUI() {
+  document.getElementById('cfgSheet').value = CFG.sheetId||'';
+  document.getElementById('cfgWA').value    = CFG.waUrl||'';
+}
+
+// ═══════════════════════════════════
+// UTILS
+// ═══════════════════════════════════
+function setStatus(s, msg) {
+  const d = document.getElementById('sDot');
+  d.className = 'dot' + (s==='ok'?' ok':s==='spin'?' spin':'');
+  document.getElementById('sTxt').textContent = msg;
+}
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className='toast'+(err?' err':'');
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.classList.remove('show'), 3200);
+}
+function limpiarSerie(s) { return (s+'').replace(/\.0$/,'').trim(); }
+
+// ═══════════════════════════════════
+// ALERTAS
+// ═══════════════════════════════════
+function renderAlertas() {
+  const el = document.getElementById('alertasPanel');
+  if (!el) return;
+
+  const ahora    = new Date();
+  const hoyTotal = ahora.getFullYear()*12 + ahora.getMonth()+1;
+
+  // Clasificar extintores
+  const vencidos   = [];
+  const esteMes    = [];
+  const proxMes    = [];
+  const en3meses   = [];
+
+  DB.extintores.forEach(e => {
+    const m = parseInt(e.vencMes)||0;
+    const a = parseInt(e.vencAnio)||0;
+    if (!m||!a) return;
+    const vt = a*12+m;
+    const diff = vt - hoyTotal;
+    if (diff < 0)       vencidos.push(e);
+    else if (diff === 0) esteMes.push(e);
+    else if (diff === 1) proxMes.push(e);
+    else if (diff <= 3)  en3meses.push(e);
+  });
+
+  if (!vencidos.length && !esteMes.length && !proxMes.length && !en3meses.length) {
+    el.innerHTML = '<div style="background:var(--green-l);border:1.5px solid var(--green);border-radius:12px;padding:14px;text-align:center;color:var(--green);font-weight:700;margin-bottom:10px">✅ Sin vencimientos próximos</div>';
+    return;
+  }
+
+  let html = '';
+
+  if (vencidos.length) {
+    html += alertaBloque('🔴 Vencidos (' + vencidos.length + ')', vencidos, 'var(--red)', 'var(--red-l)', '#fed7d7');
+  }
+  if (esteMes.length) {
+    html += alertaBloque('🟠 Vencen este mes (' + esteMes.length + ')', esteMes, 'var(--amber)', 'var(--amber-l)', '#fbd38d');
+  }
+  if (proxMes.length) {
+    html += alertaBloque('🟡 Vencen el mes que viene (' + proxMes.length + ')', proxMes, '#b7791f', '#fefcbf', '#f6e05e');
+  }
+  if (en3meses.length) {
+    html += alertaBloque('⚠️ Vencen en 2-3 meses (' + en3meses.length + ')', en3meses, 'var(--g600)', 'var(--g100)', 'var(--g200)');
+  }
+
+  el.innerHTML = html;
+}
+
+function alertaBloque(titulo, exts, color, bg, border) {
+  // Agrupar por empresa
+  const porEmp = {};
+  exts.forEach(e => {
+    if (!porEmp[e.cliente]) porEmp[e.cliente] = [];
+    porEmp[e.cliente].push(e);
+  });
+
+  let html = '<div style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:12px;margin-bottom:10px;overflow:hidden">' +
+    '<div style="padding:11px 14px;border-bottom:1px solid ' + border + ';display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleAlerta(this)">' +
+      '<div style="font-weight:700;font-size:14px;color:' + color + '">' + titulo + '</div>' +
+      '<span style="color:' + color + ';font-size:13px">▼</span>' +
+    '</div>' +
+    '<div class="alerta-body" style="display:none">';
+
+  Object.entries(porEmp).sort((a,b) => a[0].localeCompare(b[0])).forEach(([emp, lista]) => {
+    html += '<div style="padding:10px 14px;border-bottom:1px solid ' + border + '">' +
+      '<div style="font-size:13px;font-weight:700;margin-bottom:6px">' + emp + ' <span style="font-weight:400;color:var(--g400)">(' + lista.length + ')</span></div>' +
+      lista.map(e =>
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05)">' +
+          '<div>' +
+            '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--teal-d)">N° ' + (e.serie||'—') + '</span>' +
+            '<span style="font-size:12px;color:var(--g600);margin-left:8px">' + (e.tipo||'') + ' ' + (e.capacidad||'') + '</span>' +
+            (e.ubicacion ? '<div style="font-size:11px;color:var(--g400)">📍 '+e.ubicacion+'</div>' : '') +
+          '</div>' +
+          '<span style="font-size:11px;font-weight:700;color:' + color + '">' + (e.vencMes||'')+'/'+( e.vencAnio||'') + '</span>' +
+        '</div>'
+      ).join('') +
+    '</div>';
+  });
+
+  html += '</div></div>';
+  return html;
+}
+
+function toggleAlerta(hdr) {
+  const body = hdr.nextElementSibling;
+  const chev = hdr.querySelector('span:last-child');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+// ═══════════════════════════════════
+// FICHA QR
+// ═══════════════════════════════════
+function datoBox(label, valor, color) {
+  return '<div style="background:white;border-radius:7px;padding:8px 10px">' +
+    '<div style="font-size:10px;color:var(--g400);font-weight:600;text-transform:uppercase;letter-spacing:.4px">' + label + '</div>' +
+    '<div style="font-size:13px;font-weight:700;color:' + (color||'var(--g900)') + ';margin-top:2px">' + valor + '</div>' +
+  '</div>';
+}
+
+function estadoLabel(est) {
+  const m = {
+    'OPERATIVO':              { txt:'Operativo',               color:'var(--green)',  bg:'var(--green-l)' },
+    'EN_RECARGA_PRESTAMO':    { txt:'En recarga - Préstamo',   color:'var(--amber)',  bg:'var(--amber-l)' },
+    'EN_RECARGA_RESERVA':     { txt:'En recarga - Reserva',    color:'var(--amber)',  bg:'var(--amber-l)' },
+    'RECHAZADO':              { txt:'Rechazado',               color:'var(--red)',    bg:'var(--red-l)'   },
+    'DESPRESURIZADO_PRESTAMO':{ txt:'Despresurizado - Préstamo',color:'var(--red)',   bg:'var(--red-l)'   },
+    'DESPRESURIZADO_RESERVA': { txt:'Despresurizado - Reserva', color:'var(--red)',   bg:'var(--red-l)'   },
+  };
+  const e = (est||'').toUpperCase().replace(/ /g,'_');
+  return m[e] || { txt: est||'Sin estado', color:'var(--g600)', bg:'var(--g100)' };
+}
+
+function calcularVencimiento(mes, anio) {
+  const m = parseInt(mes)||0, a = parseInt(anio)||0;
+  if (!m||!a) return { txt:'Sin fecha', alert:false };
+  const ahora   = new Date();
+  const hoyTotal= ahora.getFullYear()*12 + ahora.getMonth()+1;
+  const vencTotal= a*12+m;
+  const diff    = vencTotal - hoyTotal;
+  if (diff < 0)  return { txt:'Vencido hace ' + Math.abs(diff) + ' mes(es)', alert:true, color:'var(--red)' };
+  if (diff === 0) return { txt:'Vence este mes', alert:true, color:'var(--red)' };
+  if (diff === 1) return { txt:'Vence el mes que viene', alert:true, color:'var(--amber)' };
+  if (diff <= 3)  return { txt:'Vence en ' + diff + ' meses', alert:true, color:'var(--amber)' };
+  return { txt: m + '/' + a, alert:false, color:'var(--g600)' };
+}
+
+function mostrarFichaQR(ext) {
+  const est   = estadoLabel(ext.estado);
+  const venc  = calcularVencimiento(ext.vencMes, ext.vencAnio);
+  const ov    = document.getElementById('fichaOv');
+
+  document.getElementById('fichaContent').innerHTML =
+    '<div style="background:var(--g50);border-radius:12px;padding:14px;margin-bottom:12px">' +
+      '<div style="font-family:DM Mono,monospace;font-size:12px;color:var(--teal-d);margin-bottom:4px">N° ' + (ext.serie||'—') + '</div>' +
+      '<div style="font-size:18px;font-weight:700;margin-bottom:2px">' + (ext.tipo||'') + ' · ' + (ext.capacidad||'') + '</div>' +
+      '<div style="font-size:13px;color:var(--g400)">' + (ext.cliente||'') + '</div>' +
+      (ext.ubicacion||ext.puesto ? '<div style="font-size:13px;color:var(--g600);margin-top:4px">📍 ' + (ext.ubicacion||ext.puesto) + '</div>' : '') +
+    '</div>' +
+
+    // Estado actual
+    '<div style="background:' + est.bg + ';border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px">' +
+      '<div style="font-size:22px">' + (est.txt.includes('Operativo')?'✅':est.txt.includes('recarga')?'⚡':est.txt.includes('Despres')?'💨':'❌') + '</div>' +
+      '<div><div style="font-size:13px;font-weight:700;color:' + est.color + '">' + est.txt + '</div>' +
+      '<div style="font-size:11px;color:var(--g600)">Estado actual en la base</div></div>' +
+    '</div>' +
+
+    // Vencimiento
+    '<div style="background:' + (venc.alert?'var(--amber-l)':'var(--g50)') + ';border-radius:10px;padding:12px 14px;margin-bottom:10px">' +
+      '<div style="font-size:11px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Vencimiento de carga</div>' +
+      '<div style="font-size:15px;font-weight:700;color:' + (venc.color||'var(--g900)') + '">' + venc.txt + '</div>' +
+    '</div>' +
+
+    // Vida útil y PH
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      '<div style="background:var(--g50);border-radius:10px;padding:11px">' +
+        '<div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;margin-bottom:3px">Vida útil</div>' +
+        '<div style="font-size:14px;font-weight:700">' + (ext.vidaUtil||'—') + '</div>' +
+      '</div>' +
+      '<div style="background:var(--g50);border-radius:10px;padding:11px">' +
+        '<div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;margin-bottom:3px">Venc. PH</div>' +
+        '<div style="font-size:14px;font-weight:700">' + (ext.vencPH||'—') + '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Botón inspeccionar
+  document.getElementById('fichaInspBtn').onclick = () => {
+    cerrarFicha();
+    document.getElementById('empSel').value = ext.cliente;
+    onEmpresaSel(ext.cliente);
+    iniciarInspeccion();
+    goTabNombre('insp');
+    setTimeout(() => {
+      const k = ext.serie||ext.item;
+      toggleExt(k);
+      const card = document.getElementById('ec-' + k);
+      if (card) card.scrollIntoView({behavior:'smooth'});
+    }, 500);
+  };
+
+  ov.style.display = 'flex';
+}
+
+function cerrarFicha() {
+  document.getElementById('fichaOv').style.display = 'none';
+}
+
+// ═══════════════════════════════════
+// NUEVO EXTINTOR
+// ═══════════════════════════════════
+function poblarSelectorNuevo() {
+  const sel = document.getElementById('nuEmp');
+  if (!sel) return;
+  const empresas = [...new Set(DB.extintores.map(e => e.cliente).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">— Seleccioná —</option>' +
+    empresas.map(e => '<option value="' + e.replace(/"/g,'&quot;') + '">' + e + '</option>').join('');
+}
+
+async function guardarNuevoExt() {
+  const emp     = document.getElementById('nuEmp').value.trim();
+  const tipo    = document.getElementById('nuTipo').value.trim();
+  const cap     = document.getElementById('nuCap').value.trim();
+  const serie   = document.getElementById('nuSerie').value.trim();
+  const ubic    = document.getElementById('nuUbic').value.trim();
+  const puesto  = document.getElementById('nuPuesto').value.trim();
+  const venc    = document.getElementById('nuVenc').value;
+  const vidaUtil= document.getElementById('nuVidaUtil').value;
+  const vencPH  = document.getElementById('nuVencPH').value;
+  const estado  = document.getElementById('nuEstado').value;
+  const obs     = document.getElementById('nuObs').value.trim();
+  const msg     = document.getElementById('nuMsg');
+
+  if (!emp)  { toast('Seleccioná la empresa', true); return; }
+  if (!tipo) { toast('Seleccioná el tipo', true); return; }
+  if (!serie){ toast('Ingresá el N° de serie', true); return; }
+
+  // Parsear vencimiento
+  let vencMes='', vencAnio='';
+  if (venc) { const p=venc.split('-'); vencAnio=p[0]; vencMes=p[1]; }
+
+  const datos = {
+    accion:    'nuevoExtintor',
+    cliente:   emp,
+    tipo:      tipo,
+    capacidad: cap,
+    serie:     serie,
+    ubicacion: ubic,
+    puesto:    puesto,
+    vencMes:   vencMes,
+    vencAnio:  vencAnio,
+    vidaUtil:  vidaUtil,
+    vencPH:    vencPH,
+    estado:    estado,
+    obs:       obs,
+    tecnico:   INSP.tecnico || '',
+    fecha:     new Date().toLocaleDateString('es-AR'),
+  };
+
+  msg.textContent = 'Guardando...';
+  try {
+    await enviar(datos);
+    toast('Extintor guardado en la base');
+    msg.textContent = 'Guardado correctamente';
+    // Limpiar form
+    ['nuSerie','nuUbic','nuPuesto','nuVenc','nuVidaUtil','nuVencPH','nuObs'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('nuEmp').value = '';
+    document.getElementById('nuTipo').value = '';
+    document.getElementById('nuCap').value = '';
+    document.getElementById('nuEstado').value = 'OPERATIVO';
+  } catch(e) {
+    toast('Error: ' + e.message, true);
+    msg.textContent = 'Error al guardar';
+  }
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const c = localStorage.getItem('syma_cfg');
+  if (c) { const p=JSON.parse(c); if(p.sheetId) CFG.sheetId=p.sheetId; if(p.waUrl) CFG.waUrl=p.waUrl; }
+  const tec = localStorage.getItem('syma_tec');
+  if (tec) { INSP.tecnico=tec; const s=document.getElementById('tecSel'); if(s) s.value=tec; }
+  cargarDatos();
+});
+</script>
+</body>
+</html>
