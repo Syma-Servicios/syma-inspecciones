@@ -1376,7 +1376,10 @@ function cerrarFicha() {
 function poblarSelectorNuevo() {
   const sel = document.getElementById('nuEmp');
   if (!sel) return;
-  const empresas = [...new Set(DB.extintores.map(e => e.cliente).filter(Boolean))].sort();
+  // Usar clientes como fuente para mostrar todos incluso sin extintores
+  const deClientes  = DB.clientes.map(c => c.nombre).filter(Boolean);
+  const deExtintores = DB.extintores.map(e => e.cliente).filter(Boolean);
+  const empresas = [...new Set([...deClientes, ...deExtintores])].sort();
   sel.innerHTML = '<option value="">— Seleccioná —</option>' +
     empresas.map(e => '<option value="' + e.replace(/"/g,'&quot;') + '">' + e + '</option>').join('');
 }
