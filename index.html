@@ -582,7 +582,9 @@ function limpiarSerie(s) {
 // SELECTORES
 // ═══════════════════════════════════
 function poblarSelectores() {
-  const empresas = [...new Set(DB.extintores.map(e => e.cliente).filter(Boolean))].sort();
+  const deClientes   = DB.clientes.map(c => c.nombre).filter(Boolean);
+  const deExtintores = DB.extintores.map(e => e.cliente).filter(Boolean);
+  const empresas = [...new Set([...deClientes, ...deExtintores])].sort();
   const opts = '<option value="">— Seleccioná —</option>' +
     empresas.map(e => '<option value="' + e.replace(/"/g,'&quot;') + '">' + e + '</option>').join('');
   document.getElementById('empSel').innerHTML = opts;
@@ -989,28 +991,40 @@ function genPDF() {
     const exts = DB.extintores.filter(e=>e.cliente===INSP.cliente?.nombre);
     const insp = exts.filter(e=>INSP.items[e.serie||e.item]?.estado);
 
+    // Usar orientación horizontal para más columnas
+    const colS=M, colTipo=M+28, colCap=M+62, colEst=M+84, colVenc=M+108, colPH=M+124, colVU=M+138, colObs=M+152;
+
     doc.setFillColor(0,0,0); doc.rect(M,y,cW,6,'F');
-    doc.setTextColor(255,255,255); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
-    doc.text('SERIE',M+2,y+4); doc.text('TIPO',M+32,y+4); doc.text('CAPACIDAD',M+72,y+4);
-    doc.text('ESTADO',M+100,y+4); doc.text('VENC.',M+128,y+4); doc.text('OBS',M+148,y+4);
+    doc.setTextColor(255,255,255); doc.setFontSize(6); doc.setFont('helvetica','bold');
+    doc.text('SERIE',    colS+1,  y+4);
+    doc.text('TIPO',     colTipo, y+4);
+    doc.text('CAP.',     colCap,  y+4);
+    doc.text('ESTADO',   colEst,  y+4);
+    doc.text('VENC.',    colVenc, y+4);
+    doc.text('PH',       colPH,   y+4);
+    doc.text('V.UTIL',   colVU,   y+4);
+    doc.text('OBS',      colObs,  y+4);
     y+=6;
 
     insp.forEach((e,i) => {
       if (y>270) { doc.addPage(); y=14; }
       const k=e.serie||e.item, ii=INSP.items[k];
+      const rowH = 7;
       doc.setFillColor(i%2===0?255:248,i%2===0?255:248,i%2===0?255:249);
-      doc.rect(M,y,cW,7,'F');
-      doc.setTextColor(0,0,0); doc.setFontSize(7); doc.setFont('helvetica','normal');
-      doc.text(e.serie||'—',M+2,y+4.8);
-      doc.text(e.tipo||'—',M+32,y+4.8,{maxWidth:36});
-      doc.text(e.capacidad||'—',M+72,y+4.8);
+      doc.rect(M,y,cW,rowH,'F');
+      doc.setTextColor(0,0,0); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+      doc.text(e.serie||'—',         colS+1,  y+4.8, {maxWidth:26});
+      doc.text(e.tipo||'—',          colTipo, y+4.8, {maxWidth:30});
+      doc.text(e.capacidad||'—',     colCap,  y+4.8, {maxWidth:20});
       const col=ii.estado==='RECHAZADO'?[229,62,62]:ii.estado==='A_RECARGAR'?[214,158,46]:[56,161,105];
       doc.setFont('helvetica','bold'); doc.setTextColor(...col);
-      doc.text(ii.estado.replace('_',' '),M+100,y+4.8);
+      doc.text(ii.estado.replace('_',' '), colEst, y+4.8, {maxWidth:22});
       doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0);
-      doc.text(ii.vencNuevo||'—',M+128,y+4.8);
-      doc.text(ii.obs||'—',M+148,y+4.8,{maxWidth:44});
-      y+=7;
+      doc.text(ii.vencNuevo||'—',    colVenc, y+4.8, {maxWidth:13});
+      doc.text(ii.vencPH||'—',       colPH,   y+4.8, {maxWidth:13});
+      doc.text(ii.vidaUtil||'—',     colVU,   y+4.8, {maxWidth:13});
+      doc.text(ii.obs||'—',          colObs,  y+4.8, {maxWidth:38});
+      y+=rowH;
     });
     doc.save('Syma_Insp_'+(INSP.cliente?.nombre||'').replace(/\s+/g,'_')+'.pdf');
     toast('PDF descargado');
