@@ -1444,7 +1444,7 @@ async function cargarOrdenes() {
             '<span class="badge ' + tipoCls + '">' + tipoTxt + '</span>' +
           '</div>' +
           '<div style="font-size:12px;color:var(--g400)">📅 ' + (o.FECHA||'—') + ' · ' + (o.TECNICO||'Sin técnico') + '</div>' +
-          '<button class="btn btn-primary btn-full btn-sm" onclick="abrirOrdenEnInspeccion('' + (o.CLIENTE||'').replace(/'/g,"\'") + '','' + (o.N_ORDEN||'') + '','' + (o.TIPO||'RETIRO') + '')">' +
+          '<button class="btn btn-primary btn-full btn-sm" onclick="abrirOrdenEnInspeccion(this)" data-cliente="' + (o.CLIENTE||'').replace(/"/g,'&quot;') + '" data-orden="' + (o.N_ORDEN||'') + '" data-tipo="' + (o.TIPO||'RETIRO') + '">' +
             'Abrir y completar orden' +
           '</button>' +
         '</div>' +
