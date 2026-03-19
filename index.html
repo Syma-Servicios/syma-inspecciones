@@ -172,6 +172,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g900);mi
   <button class="tab on" data-sc="inicio" onclick="goTab(this)"><span class="tab-ico">🏠</span>Inicio</button>
   <button class="tab" data-sc="insp" onclick="goTab(this)"><span class="tab-ico">🔍</span>Inspección</button>
   <button class="tab" data-sc="qr" onclick="goTab(this)"><span class="tab-ico">🏷️</span>QR</button>
+  <button class="tab" data-sc="ordenes" onclick="goTab(this)"><span class="tab-ico">📦</span>Órdenes</button>
   <button class="tab" data-sc="nuevo" onclick="goTab(this)"><span class="tab-ico">➕</span>Nuevo</button>
   <button class="tab" data-sc="hist" onclick="goTab(this)"><span class="tab-ico">📋</span>Historial</button>
   <button class="tab" data-sc="cfg" onclick="goTab(this)"><span class="tab-ico">⚙️</span>Config</button>
@@ -293,6 +294,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g900);mi
       </div>
     </div>
   </div>
+</div>
+
+<!-- ÓRDENES PENDIENTES -->
+<div class="sc" id="sc-ordenes">
+  <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:4px">Mis órdenes</div>
+  <div style="font-size:13px;color:var(--g400);margin-bottom:14px">Órdenes pendientes asignadas a vos</div>
+  <button class="btn btn-secondary btn-full btn-sm" style="margin-bottom:14px" onclick="cargarOrdenes()">🔄 Actualizar órdenes</button>
+  <div id="ordenesList"></div>
 </div>
 
 <!-- NUEVO EXTINTOR -->
@@ -492,6 +501,7 @@ function goTab(btn) {
   document.getElementById('bottomBar').style.display = 'none';
   const sc = btn.dataset.sc;
   if (sc === 'hist') renderHist();
+  if (sc === 'ordenes') cargarOrdenes();
   if (sc === 'cfg')  cargarCfgUI();
   if (sc === 'insp' && INSP.cliente) document.getElementById('bottomBar').style.display = 'block';
 }
@@ -552,7 +562,7 @@ async function cargarDatos(forzar=false) {
       ubicacion: r[hE.indexOf('UBICACION')] || '',
       puesto:    r[hE.indexOf('PUESTO')]    || '',
       estado:    r[hE.indexOf('ESTADO')]    || '',
-    })).filter(e => e.tipo && e.tipo.length > 1);
+    })).filter(e => e.cliente && e.cliente.length > 1);
 
     setStatus('ok','Conectado');
     document.getElementById('stCli').textContent = DB.clientes.length;
@@ -1382,6 +1392,80 @@ function mostrarFichaQR(ext) {
 
 function cerrarFicha() {
   document.getElementById('fichaOv').style.display = 'none';
+}
+
+// ═══════════════════════════════════
+// ÓRDENES PENDIENTES
+// ═══════════════════════════════════
+async function cargarOrdenes() {
+  const el = document.getElementById('ordenesList');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--g400)">Cargando...</div>';
+
+  try {
+    // Leer hoja Ordenes del Sheet
+    const url  = 'https://docs.google.com/spreadsheets/d/' + CFG.sheetId + '/gviz/tq?tqx=out:csv&sheet=Ordenes';
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Error ' + resp.status);
+    const txt  = await resp.text();
+    const rows = txt.split('\n');
+    if (rows.length < 2) { el.innerHTML = '<div class="empty"><div class="empty-ico">📦</div><h3>Sin órdenes</h3><p>No hay órdenes pendientes</p></div>'; return; }
+
+    const headers = rows[0].split(',').map(c => c.replace(/"/g,'').trim());
+    const ordenes = rows.slice(1).filter(r => r.trim()).map(row => {
+      const cols = row.split(',').map(c => c.replace(/"/g,'').trim());
+      const obj  = {};
+      headers.forEach((h,i) => obj[h] = cols[i] || '');
+      return obj;
+    });
+
+    // Filtrar por técnico actual y estado PENDIENTE
+    const misTecnico = INSP.tecnico;
+    const pendientes = ordenes.filter(o =>
+      (!misTecnico || o.TECNICO === misTecnico || !o.TECNICO) &&
+      (o.ESTADO === 'PENDIENTE' || !o.ESTADO || o.ESTADO === '')
+    ).reverse();
+
+    if (!pendientes.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">✅</div><h3>Sin órdenes pendientes</h3><p>Todo al día</p></div>';
+      return;
+    }
+
+    el.innerHTML = pendientes.map(o => {
+      const tipoCls = o.TIPO === 'INSPECCION' ? 'b-teal' : o.TIPO === 'RETIRO_INSPECCION' ? 'b-warn' : 'b-gray';
+      const tipoTxt = o.TIPO === 'INSPECCION' ? '🔍 Inspección' : o.TIPO === 'RETIRO_INSPECCION' ? '🔄🔍 Retiro+Insp' : '🔄 Retiro';
+      return '<div class="card" style="margin-bottom:10px">' +
+        '<div class="card-body" style="gap:8px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+            '<div>' +
+              '<div style="font-family:DM Mono,monospace;font-size:12px;color:var(--teal-d);font-weight:700">' + (o.N_ORDEN||'—') + '</div>' +
+              '<div style="font-size:15px;font-weight:700;margin-top:2px">' + (o.CLIENTE||'—') + '</div>' +
+            '</div>' +
+            '<span class="badge ' + tipoCls + '">' + tipoTxt + '</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--g400)">📅 ' + (o.FECHA||'—') + ' · ' + (o.TECNICO||'Sin técnico') + '</div>' +
+          '<button class="btn btn-primary btn-full btn-sm" onclick="abrirOrdenEnInspeccion('' + (o.CLIENTE||'').replace(/'/g,"\'") + '','' + (o.N_ORDEN||'') + '','' + (o.TIPO||'RETIRO') + '')">' +
+            'Abrir y completar orden' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">⚠️</div><h3>Error al cargar</h3><p>' + e.message + '</p></div>';
+  }
+}
+
+function abrirOrdenEnInspeccion(cliente, nOrden, tipo) {
+  // Setear cliente en la inspección
+  INSP.ordenActual = { nOrden, tipo };
+  document.getElementById('empSel').value = cliente;
+  onEmpresaSel(cliente);
+  // Ir a inspección
+  document.querySelector('[data-sc="insp"]').click();
+  // Mostrar aviso del tipo de orden
+  const tipoTxt = tipo === 'INSPECCION' ? 'Inspección' : tipo === 'RETIRO_INSPECCION' ? 'Retiro + Inspección' : 'Retiro';
+  toast('Orden ' + nOrden + ' — ' + tipoTxt);
 }
 
 // ═══════════════════════════════════
