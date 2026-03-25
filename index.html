@@ -891,7 +891,9 @@ async function finalizar() {
       await enviar({ fecha:INSP.fecha, cliente:INSP.cliente.nombre, tecnico:INSP.tecnico,
         serie:ext.serie||'', tipo:ext.tipo||'', estado:i.estado||'',
         vencNuevo:i.vencNuevo||'', proxInsp:i.proxInsp||'',
-        vidaUtil:i.vidaUtil||'', vencPH:i.vencPH||'', obs:i.obs||'' });
+        vidaUtil:i.vidaUtil||'', vencPH:i.vencPH||'',
+        ubicacion:i.ubicacion||ext.ubicacion||ext.puesto||'',
+        puesto:ext.puesto||'', obs:i.obs||'' });
       if (i._act && ext.serie) {
         await enviar({ accion:'actualizar', serie:ext.serie, estado:i.estado||'',
           vencNuevo:i.vencNuevo||'', vidaUtil:i.vidaUtil||'',
@@ -1001,8 +1003,8 @@ function genPDF() {
     const exts = DB.extintores.filter(e=>e.cliente===INSP.cliente?.nombre);
     const insp = exts.filter(e=>INSP.items[e.serie||e.item]?.estado);
 
-    // Usar orientación horizontal para más columnas
-    const colS=M, colTipo=M+28, colCap=M+62, colEst=M+84, colVenc=M+108, colPH=M+124, colVU=M+138, colObs=M+152;
+    // Columnas del PDF
+    const colS=M, colTipo=M+26, colCap=M+57, colEst=M+77, colUbic=M+99, colVenc=M+124, colPH=M+137, colVU=M+150, colObs=M+163;
 
     doc.setFillColor(0,0,0); doc.rect(M,y,cW,6,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(6); doc.setFont('helvetica','bold');
@@ -1010,6 +1012,7 @@ function genPDF() {
     doc.text('TIPO',     colTipo, y+4);
     doc.text('CAP.',     colCap,  y+4);
     doc.text('ESTADO',   colEst,  y+4);
+    doc.text('UBICACION',colUbic, y+4);
     doc.text('VENC.',    colVenc, y+4);
     doc.text('PH',       colPH,   y+4);
     doc.text('V.UTIL',   colVU,   y+4);
@@ -1023,17 +1026,18 @@ function genPDF() {
       doc.setFillColor(i%2===0?255:248,i%2===0?255:248,i%2===0?255:249);
       doc.rect(M,y,cW,rowH,'F');
       doc.setTextColor(0,0,0); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-      doc.text(e.serie||'—',         colS+1,  y+4.8, {maxWidth:26});
-      doc.text(e.tipo||'—',          colTipo, y+4.8, {maxWidth:30});
-      doc.text(e.capacidad||'—',     colCap,  y+4.8, {maxWidth:20});
+      doc.text(e.serie||'—',                            colS+1,  y+4.8, {maxWidth:24});
+      doc.text(e.tipo||'—',                             colTipo, y+4.8, {maxWidth:28});
+      doc.text(e.capacidad||'—',                        colCap,  y+4.8, {maxWidth:18});
       const col=ii.estado==='RECHAZADO'?[229,62,62]:ii.estado==='A_RECARGAR'?[214,158,46]:[56,161,105];
       doc.setFont('helvetica','bold'); doc.setTextColor(...col);
-      doc.text(ii.estado.replace('_',' '), colEst, y+4.8, {maxWidth:22});
+      doc.text(ii.estado.replace('_',' '),              colEst,  y+4.8, {maxWidth:22});
       doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0);
-      doc.text(ii.vencNuevo||'—',    colVenc, y+4.8, {maxWidth:13});
-      doc.text(ii.vencPH||'—',       colPH,   y+4.8, {maxWidth:13});
-      doc.text(ii.vidaUtil||'—',     colVU,   y+4.8, {maxWidth:13});
-      doc.text(ii.obs||'—',          colObs,  y+4.8, {maxWidth:38});
+      doc.text(ii.ubicacion||e.ubicacion||e.puesto||'—',colUbic, y+4.8, {maxWidth:22});
+      doc.text(ii.vencNuevo||'—',                       colVenc, y+4.8, {maxWidth:12});
+      doc.text(ii.vencPH||'—',                          colPH,   y+4.8, {maxWidth:12});
+      doc.text(ii.vidaUtil||'—',                        colVU,   y+4.8, {maxWidth:12});
+      doc.text(ii.obs||'—',                             colObs,  y+4.8, {maxWidth:28});
       y+=rowH;
     });
     doc.save('Syma_Insp_'+(INSP.cliente?.nombre||'').replace(/\s+/g,'_')+'.pdf');
